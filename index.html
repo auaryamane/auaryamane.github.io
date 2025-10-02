@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Popup Iframe Example</title>
+  <style>
+    #popupModal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0; top: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+    }
+    #popupContent {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: #fff;
+      padding: 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+      width: 80vw; height: 80vh;
+      display: flex; flex-direction: column;
+    }
+    #popupContent iframe {
+      width: 100%; height: 100%; border: none;
+      flex: 1;
+    }
+    #closeBtn {
+      align-self: flex-end;
+      margin: 8px;
+      cursor: pointer;
+      background: #f44336;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 4px 12px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <textarea id="myTextarea"></textarea>
+  <div>
+  <button onclick="openPopup()">Open Iframe Popup</button></div>
+
+  <div id="popupModal">
+    <div id="popupContent">
+      <button id="closeBtn" onclick="closePopup()">Close</button>
+      <iframe id="myFrame" src="about:blank" ></iframe>
+    </div>
+  </div>
+
+  <script>
+    function openPopup() {
+      document.getElementById('popupModal').style.display = 'block';
+      const text = document.getElementById("myTextarea").value;
+      document.getElementById('myFrame').src=text;
+    }
+    function closePopup() {
+      document.getElementById('popupModal').style.display = 'none';
+    }
+  </script>
+</body>
+</html>
