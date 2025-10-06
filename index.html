@@ -30,7 +30,7 @@
     function dropCookieJS() {
       try {
         // document.cookie cannot set HttpOnly cookies; those must be set server-side
-        document.cookie = "iframe_cookie=js-set-value; max-age=3600; path=/";
+        document.cookie = "iframe_cookie=js-set-value; max-age=3600; path=/github.io Partitioned";
         // read it back (only works if same-origin or cookie available)
         const got = document.cookie.split('; ').find(s => s.startsWith('iframe_cookie='));
         const cookieSet = !!got;
