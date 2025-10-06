@@ -1,65 +1,103 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Popup Iframe Example</title>
-  <style>
-    #popupModal {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0; top: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.5);
-    }
-    #popupContent {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      background: #fff;
-      padding: 0;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-      width: 80vw; height: 80vh;
-      display: flex; flex-direction: column;
-    }
-    #popupContent iframe {
-      width: 100%; height: 100%; border: none;
-      flex: 1;
-    }
-    #closeBtn {
-      align-self: flex-end;
-      margin: 8px;
-      cursor: pointer;
-      background: #f44336;
-      color: #fff;
-      border: none;
-      border-radius: 4px;
-      padding: 4px 12px;
-      font-size: 16px;
-    }
-  </style>
+  <meta charset="utf-8"/>
+  <title>Iframe that drops a cookie</title>
+  <style>body{font-family:system-ui,Segoe UI,Roboto,Arial;padding:12px}</style>
 </head>
 <body>
-  <textarea id="myTextarea"></textarea>
-  <div>
-  <button onclick="openPopup()">Open Iframe Popup</button></div>
+  <h2>Iframe (site-b)</h2>
+  <p id="status">starting...</p>
 
-  <div id="popupModal">
-    <div id="popupContent">
-      <button id="closeBtn" onclick="closePopup()">Close</button>
-      <iframe id="myFrame" src="about:blank" ></iframe>
-    </div>
-  </div>
+  <button id="tryDrop">Try to drop cookie via JS</button>
+  <button id="reqStorageAccess">Request Storage Access (if needed)</button>
 
   <script>
-    function openPopup() {
-      document.getElementById('popupModal').style.display = 'block';
-      const text = document.getElementById("myTextarea").value;
-      document.getElementById('myFrame').src=text;
+    const status = (s) => {
+      document.getElementById('status').textContent = s;
+      console.log(s);
+    };
+
+    // Utility to send structured messages to the parent (postMessage)
+    function notifyParent(msg) {
+      // For security, replace '*' with the known parent origin if possible.
+      // When embedding cross-origin, the parent origin is the top-level origin; in many cases you can use document.referrer to derive it.
+      const parentOrigin = document.referrer ? new URL(document.referrer).origin : '*';
+      window.parent.postMessage(msg, parentOrigin);
     }
-    function closePopup() {
-      document.getElementById('popupModal').style.display = 'none';
+
+    // Attempt to set a normal cookie with document.cookie
+    function dropCookieJS() {
+      try {
+        // document.cookie cannot set HttpOnly cookies; those must be set server-side
+        document.cookie = "iframe_cookie=js-set-value; max-age=3600; path=/";
+        // read it back (only works if same-origin or cookie available)
+        const got = document.cookie.split('; ').find(s => s.startsWith('iframe_cookie='));
+        const cookieSet = !!got;
+        status('document.cookie set attempt. readback=' + (got || '<none>'));
+        notifyParent({ type: 'cookie-set-result', cookieSet, details: got || null });
+      } catch (err) {
+        status('cookie JS error: ' + err.message);
+        notifyParent({ type: 'cookie-set-result', cookieSet: false, details: String(err) });
+      }
     }
+
+    // Storage Access API flow (works only in some browsers and typically requires a user gesture)
+    async function requestStorageAccess() {
+      status('requesting storage access (Storage Access API)...');
+      if (document.hasStorageAccess) {
+        try {
+          const has = await document.hasStorageAccess();
+          status('hasStorageAccess() => ' + has);
+          if (!has) {
+            // user gesture required — call from click handler (we do)
+            await document.requestStorageAccess();
+            status('requestStorageAccess() succeeded — now try setting cookie');
+            dropCookieJS();
+          } else {
+            status('already has storage access; trying to set cookie');
+            dropCookieJS();
+          }
+        } catch (err) {
+          status('Storage Access API error: ' + err.message);
+          notifyParent({ type: 'cookie-set-result', cookieSet: false, details: 'storage-access-failed: ' + err.message });
+        }
+      } else {
+        status('Storage Access API not supported in this browser');
+        notifyParent({ type: 'cookie-set-result', cookieSet: false, details: 'storage-access-api-unsupported' });
+      }
+    }
+
+    document.getElementById('tryDrop').addEventListener('click', () => {
+      // A click is a user gesture — good for Storage Access API if needed
+      dropCookieJS();
+    });
+
+    document.getElementById('reqStorageAccess').addEventListener('click', () => {
+      requestStorageAccess();
+    });
+
+    // Listen to messages from parent
+    window.addEventListener('message', (ev) => {
+      // optionally verify ev.origin if you expect only a specific parent
+      const data = ev.data || {};
+      console.log('iframe got message', ev.origin, data);
+      if (data && data.type === 'parent-ping') {
+        status('received parent ping; attempting to set cookie automatically (for demo)');
+        // Try to set cookie on ping (note: may fail in cross-site contexts)
+        dropCookieJS();
+      }
+      if (data && data.type === 'parent-response') {
+        status('parent responded: ' + JSON.stringify(data));
+      }
+    });
+
+    // On load, report presence to parent
+    window.addEventListener('load', () => {
+      notifyParent({ type: 'iframe-loaded', url: location.href });
+      status('iframe loaded, notified parent');
+    });
+
   </script>
 </body>
 </html>
