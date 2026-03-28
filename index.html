@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Math Monster Picnic</title>
+  <style>
+    :root {
+      --bg1: #fff7e6;
+      --bg2: #dff7ff;
+      --card: #ffffff;
+      --text: #24324a;
+      --green: #36c275;
+      --green-dark: #249458;
+      --yellow: #ffd84d;
+      --shadow: 0 10px 30px rgba(36, 50, 74, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, var(--bg1), var(--bg2));
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .game {
+      width: min(900px, 100%);
+      background: rgba(255,255,255,0.55);
+      border-radius: 28px;
+      padding: 18px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .title-card, .panel, .monster-card, .answer-card, .footer-card {
+      background: var(--card);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .title-card {
+      padding: 18px;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 5vw, 3rem);
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      font-size: 1.1rem;
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .panel {
+      padding: 14px;
+      text-align: center;
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+
+    .panel span {
+      display: block;
+      margin-top: 8px;
+      font-size: 1.8rem;
+    }
+
+    .play-area {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 18px;
+    }
+
+    .monster-card {
+      padding: 24px;
+      text-align: center;
+      min-height: 420px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .monster {
+      width: min(280px, 70vw);
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #fff59d, var(--yellow));
+      position: relative;
+      border: 8px solid #fff;
+      box-shadow: inset 0 -12px 0 rgba(0,0,0,0.06), var(--shadow);
+    }
+
+    .eye {
+      position: absolute;
+      width: 42px;
+      height: 52px;
+      background: white;
+      border-radius: 50%;
+      top: 78px;
+    }
+
+    .eye.left { left: 68px; }
+    .eye.right { right: 68px; }
+
+    .pupil {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      background: #24324a;
+      border-radius: 50%;
+      top: 19px;
+      left: 12px;
+    }
+
+    .mouth {
+      position: absolute;
+      width: 120px;
+      height: 60px;
+      border-bottom: 8px solid #24324a;
+      border-radius: 0 0 120px 120px;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 58px;
+    }
+
+    .blush {
+      position: absolute;
+      width: 28px;
+      height: 18px;
+      background: rgba(255, 126, 182, 0.35);
+      border-radius: 50%;
+      top: 148px;
+    }
+
+    .blush.left { left: 44px; }
+    .blush.right { right: 44px; }
+
+    .question {
+      font-size: clamp(2rem, 5vw, 3.3rem);
+      font-weight: 900;
+      letter-spacing: 1px;
+    }
+
+    .prompt {
+      font-size: 1.2rem;
+      margin: 0;
+    }
+
+    .answer-card {
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      justify-content: center;
+    }
+
+    .choices {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 20px;
+      padding: 16px;
+      font-size: 1.5rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+      box-shadow: var(--shadow);
+    }
+
+    button:hover { transform: translateY(-2px); }
+    button:active { transform: translateY(1px); }
+
+    .choice-btn:nth-child(1) { background: #ffd84d; }
+    .choice-btn:nth-child(2) { background: #ffb3d9; }
+    .choice-btn:nth-child(3) { background: #a0e7a0; }
+    .choice-btn:nth-child(4) { background: #9fd7ff; }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .primary { background: var(--green); color: white; }
+    .primary:hover { background: var(--green-dark); }
+    .secondary { background: #edf3ff; color: var(--text); }
+
+    .message {
+      min-height: 58px;
+      border-radius: 18px;
+      padding: 14px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      background: #f7faff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .footer-card {
+      margin-top: 18px;
+      padding: 16px;
+      text-align: center;
+      font-size: 1rem;
+    }
+
+    .stars {
+      font-size: 1.4rem;
+      letter-spacing: 3px;
+      margin-top: 6px;
+      min-height: 30px;
+    }
+
+    .celebrate {
+      animation: pop 0.45s ease;
+    }
+
+    @keyframes pop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+      100% { transform: scale(1); }
+    }
+
+    @media (max-width: 760px) {
+      .status-grid, .play-area, .controls, .choices {
+        grid-template-columns: 1fr;
+      }
+
+      .monster-card {
+        min-height: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="game">
+    <section class="topbar">
+      <div class="title-card">
+        <h1>Math Monster Picnic</h1>
+        <p class="subtitle">Feed the friendly monster by solving fun math questions!</p>
+      </div>
+
+      <div class="status-grid">
+        <div class="panel">Score <span id="score">0</span></div>
+        <div class="panel">Round <span id="round">1</span></div>
+        <div class="panel">Stars <span id="starsCount">0</span></div>
+      </div>
+    </section>
+
+    <section class="play-area">
+      <div class="monster-card" id="monsterCard">
+        <div class="monster" aria-hidden="true">
+          <div class="eye left"><div class="pupil"></div></div>
+          <div class="eye right"><div class="pupil"></div></div>
+          <div class="blush left"></div>
+          <div class="blush right"></div>
+          <div class="mouth"></div>
+        </div>
+        <p class="prompt" id="promptText">Choose the right answer!</p>
+        <div class="question" id="question">2 + 1 = ?</div>
+        <div class="stars" id="starRow">⭐</div>
+      </div>
+
+      <div class="answer-card">
+        <div class="message" id="message">Tap an answer to begin.</div>
+        <div class="choices" id="choices"></div>
+        <div class="controls">
+          <button class="primary" id="nextBtn">Next Question</button>
+          <button class="secondary" id="restartBtn">Start Over</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="footer-card">
+      Great for ages 5–7. Works as a simple static page on GitHub Pages.
+    </section>
+  </main>
+
+  <script>
+    const scoreEl = document.getElementById('score');
+    const roundEl = document.getElementById('round');
+    const starsCountEl = document.getElementById('starsCount');
+    const questionEl = document.getElementById('question');
+    const messageEl = document.getElementById('message');
+    const choicesEl = document.getElementById('choices');
+    const nextBtn = document.getElementById('nextBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    const monsterCard = document.getElementById('monsterCard');
+    const promptText = document.getElementById('promptText');
+    const starRow = document.getElementById('starRow');
+
+    let score = 0;
+    let round = 1;
+    let stars = 0;
+    let answered = false;
+    let currentAnswer = 0;
+
+    function randomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function buildQuestion() {
+      const mode = Math.random() > 0.35 ? 'add' : 'subtract';
+      let a, b, text;
+
+      if (mode === 'add') {
+        a = randomInt(1, 9);
+        b = randomInt(1, 9);
+        while (a + b > 10) {
+          a = randomInt(1, 9);
+          b = randomInt(1, 9);
+        }
+        currentAnswer = a + b;
+        text = `${a} + ${b} = ?`;
+      } else {
+        a = randomInt(3, 10);
+        b = randomInt(0, a);
+        currentAnswer = a - b;
+        text = `${a} − ${b} = ?`;
+      }
+
+      questionEl.textContent = text;
+      promptText.textContent = mode === 'add' ? "Let's add!" : "Let's subtract!";
+      renderChoices();
+      answered = false;
+      messageEl.textContent = 'Choose the right answer!';
+    }
+
+    function renderChoices() {
+      const options = new Set([currentAnswer]);
+      while (options.size < 4) {
+        const wrong = Math.max(0, currentAnswer + randomInt(-3, 3));
+        options.add(wrong);
+      }
+
+      const shuffled = shuffle([...options]);
+      choicesEl.innerHTML = '';
+
+      shuffled.forEach((value) => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.textContent = value;
+        btn.addEventListener('click', () => checkAnswer(value, btn));
+        choicesEl.appendChild(btn);
+      });
+    }
+
+    function checkAnswer(value, btn) {
+      if (answered) return;
+      answered = true;
+
+      const buttons = document.querySelectorAll('.choice-btn');
+      buttons.forEach((b) => {
+        b.disabled = true;
+        b.style.opacity = '0.9';
+        if (Number(b.textContent) === currentAnswer) {
+          b.style.outline = '5px solid #36c275';
+        }
+      });
+
+      if (value === currentAnswer) {
+        score += 10;
+        stars += 1;
+        messageEl.textContent = 'Yay! Correct! The monster is happy!';
+        monsterCard.classList.remove('celebrate');
+        void monsterCard.offsetWidth;
+        monsterCard.classList.add('celebrate');
+      } else {
+        btn.style.outline = '5px solid #ff6b6b';
+        messageEl.textContent = `Nice try! The correct answer is ${currentAnswer}.`;
+      }
+
+      scoreEl.textContent = score;
+      starsCountEl.textContent = stars;
+      starRow.textContent = '⭐'.repeat(Math.max(1, Math.min(stars, 12)));
+    }
+
+    function nextQuestion() {
+      round += 1;
+      roundEl.textContent = round;
+      buildQuestion();
+    }
+
+    function restartGame() {
+      score = 0;
+      round = 1;
+      stars = 0;
+      scoreEl.textContent = score;
+      roundEl.textContent = round;
+      starsCountEl.textContent = stars;
+      starRow.textContent = '⭐';
+      buildQuestion();
+    }
+
+    nextBtn.addEventListener('click', nextQuestion);
+    restartBtn.addEventListener('click', restartGame);
+
+    buildQuestion();
+  </script>
+</body>
+</html>
