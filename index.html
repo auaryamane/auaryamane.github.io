@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Find the Gift Hunt</title>
+  <style>
+    :root {
+      --bg1: #fff8e7;
+      --bg2: #e8f7ff;
+      --card: #ffffff;
+      --text: #24324a;
+      --accent: #ff8fab;
+      --accent2: #7cc6fe;
+      --good: #41b883;
+      --shadow: 0 12px 30px rgba(36, 50, 74, 0.12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(180deg, var(--bg1), var(--bg2));
+      color: var(--text);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .wrap {
+      width: min(980px, 100%);
+      margin: 0 auto;
+    }
+    .card {
+      background: var(--card);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+    .hero {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3rem);
+    }
+    .subtitle {
+      margin: 8px 0 0;
+      font-size: 1.1rem;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    .stat {
+      text-align: center;
+      font-weight: 700;
+    }
+    .stat .big {
+      display: block;
+      font-size: 1.9rem;
+      margin-top: 6px;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+    .scene {
+      text-align: center;
+    }
+    .prompt {
+      font-size: 1.35rem;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+    .items {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 12px;
+    }
+    .item {
+      border: 0;
+      border-radius: 22px;
+      min-height: 110px;
+      font-size: 2.2rem;
+      background: #f7fbff;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      transition: transform 0.12s ease;
+    }
+    .item:hover { transform: translateY(-3px); }
+    .item span {
+      display: block;
+      font-size: 1rem;
+      font-weight: 700;
+      margin-top: 6px;
+      color: var(--text);
+    }
+    .side {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      justify-content: center;
+    }
+    .message {
+      min-height: 88px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: 700;
+      background: #f8fbff;
+      border-radius: 18px;
+      padding: 16px;
+    }
+    .bar {
+      width: 100%;
+      height: 22px;
+      background: #edf3ff;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transition: width 0.25s ease;
+    }
+    .gift-box {
+      min-height: 220px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-align: center;
+      border-radius: 24px;
+      background: linear-gradient(180deg, #fff3f7, #eef9ff);
+      padding: 18px;
+    }
+    .gift-emoji {
+      font-size: 5rem;
+      line-height: 1;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    button.action {
+      border: 0;
+      border-radius: 18px;
+      padding: 14px;
+      font-size: 1.1rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+    }
+    .next { background: var(--accent2); }
+    .restart { background: var(--accent); }
+    .found { outline: 5px solid var(--good); }
+    .wrong { outline: 5px solid #ff6b6b; }
+    @media (max-width: 760px) {
+      .layout, .stats, .controls, .items {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card hero">
+      <h1>Find the Gift Hunt</h1>
+      <p class="subtitle">Listen to what to find, tap the right thing, and win a gift at the end!</p>
+    </section>
+
+    <section class="stats">
+      <div class="card stat">Round <span class="big" id="round">1</span></div>
+      <div class="card stat">Found <span class="big" id="foundCount">0</span></div>
+      <div class="card stat">Gift Meter <span class="big" id="meterText">0%</span></div>
+    </section>
+
+    <section class="layout">
+      <section class="card scene">
+        <div class="prompt" id="prompt">Find the apple!</div>
+        <div class="items" id="items"></div>
+      </section>
+
+      <section class="side">
+        <div class="card message" id="message">Tap the thing I ask for!</div>
+        <div class="card">
+          <div class="bar"><div class="fill" id="fill"></div></div>
+        </div>
+        <div class="gift-box card" id="giftBox">
+          <div class="gift-emoji" id="giftEmoji">🎁</div>
+          <h2 id="giftTitle">Find everything to open the gift!</h2>
+          <p id="giftText">Each correct answer fills the gift meter.</p>
+        </div>
+        <div class="controls">
+          <button class="action next" id="nextBtn">Next Round</button>
+          <button class="action restart" id="restartBtn">Start Over</button>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const rounds = [
+      [
+        { emoji: '🍎', label: 'apple' },
+        { emoji: '🧸', label: 'teddy' },
+        { emoji: '🚗', label: 'car' },
+        { emoji: '⚽', label: 'ball' },
+        { emoji: '🌟', label: 'star' },
+        { emoji: '🐶', label: 'dog' }
+      ],
+      [
+        { emoji: '🍌', label: 'banana' },
+        { emoji: '🎈', label: 'balloon' },
+        { emoji: '🦋', label: 'butterfly' },
+        { emoji: '🎂', label: 'cake' },
+        { emoji: '🚲', label: 'bike' },
+        { emoji: '🌈', label: 'rainbow' }
+      ],
+      [
+        { emoji: '🐱', label: 'cat' },
+        { emoji: '🚌', label: 'bus' },
+        { emoji: '🍕', label: 'pizza' },
+        { emoji: '🎵', label: 'music note' },
+        { emoji: '🌙', label: 'moon' },
+        { emoji: '🦄', label: 'unicorn' }
+      ],
+      [
+        { emoji: '🐟', label: 'fish' },
+        { emoji: '🪁', label: 'kite' },
+        { emoji: '🍓', label: 'strawberry' },
+        { emoji: '🚀', label: 'rocket' },
+        { emoji: '🌻', label: 'sunflower' },
+        { emoji: '🐸', label: 'frog' }
+      ]
+    ];
+
+    const prizes = ['🎁 Sticker!', '🍪 Cookie!', '🧁 Cupcake!', '🏆 Surprise Gift!'];
+
+    const promptEl = document.getElementById('prompt');
+    const itemsEl = document.getElementById('items');
+    const messageEl = document.getElementById('message');
+    const roundEl = document.getElementById('round');
+    const foundCountEl = document.getElementById('foundCount');
+    const meterTextEl = document.getElementById('meterText');
+    const fillEl = document.getElementById('fill');
+    const giftEmojiEl = document.getElementById('giftEmoji');
+    const giftTitleEl = document.getElementById('giftTitle');
+    const giftTextEl = document.getElementById('giftText');
+    const nextBtn = document.getElementById('nextBtn');
+    const restartBtn = document.getElementById('restartBtn');
+
+    let roundIndex = 0;
+    let targetIndex = 0;
+    let foundCount = 0;
+    let locked = false;
+
+    function shuffle(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function renderRound() {
+      locked = false;
+      roundEl.textContent = roundIndex + 1;
+      const items = shuffle(rounds[roundIndex]);
+      targetIndex = Math.floor(Math.random() * items.length);
+      const target = items[targetIndex];
+      promptEl.textContent = `Find the ${target.label}!`;
+      itemsEl.innerHTML = '';
+      messageEl.textContent = 'Tap the thing I ask for!';
+
+      items.forEach((item, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'item';
+        btn.innerHTML = `${item.emoji}<span>${item.label}</span>`;
+        btn.addEventListener('click', () => chooseItem(index, item, target, btn));
+        itemsEl.appendChild(btn);
+      });
+    }
+
+    function chooseItem(index, item, target, btn) {
+      if (locked) return;
+      locked = true;
+
+      const all = document.querySelectorAll('.item');
+      all.forEach((el) => el.disabled = true);
+
+      if (index === targetIndex) {
+        foundCount += 1;
+        foundCountEl.textContent = foundCount;
+        btn.classList.add('found');
+        messageEl.textContent = `Great job! You found the ${target.label}!`;
+        updateGift();
+      } else {
+        btn.classList.add('wrong');
+        all[targetIndex].classList.add('found');
+        messageEl.textContent = `Oops! The right one was the ${target.label}.`;
+      }
+    }
+
+    function updateGift() {
+      const percent = Math.round((foundCount / rounds.length) * 100);
+      fillEl.style.width = percent + '%';
+      meterTextEl.textContent = percent + '%';
+
+      if (foundCount === 0) {
+        giftEmojiEl.textContent = '🎁';
+        giftTitleEl.textContent = 'Find everything to open the gift!';
+        giftTextEl.textContent = 'Each correct answer fills the gift meter.';
+      } else if (foundCount < rounds.length) {
+        giftEmojiEl.textContent = '🎀';
+        giftTitleEl.textContent = 'The gift is opening...';
+        giftTextEl.textContent = `${rounds.length - foundCount} more correct round(s) to go!`;
+      } else {
+        const prize = prizes[Math.floor(Math.random() * prizes.length)];
+        giftEmojiEl.textContent = '🎉';
+        giftTitleEl.textContent = 'You got a gift!';
+        giftTextEl.textContent = `Surprise prize: ${prize}`;
+      }
+    }
+
+    function nextRound() {
+      if (roundIndex < rounds.length - 1) {
+        roundIndex += 1;
+        renderRound();
+      } else {
+        messageEl.textContent = foundCount === rounds.length
+          ? 'Amazing! You finished the whole hunt and got the gift!'
+          : 'Game over! Start over and try to win the gift!';
+      }
+    }
+
+    function restartGame() {
+      roundIndex = 0;
+      foundCount = 0;
+      foundCountEl.textContent = '0';
+      updateGift();
+      renderRound();
+    }
+
+    nextBtn.addEventListener('click', nextRound);
+    restartBtn.addEventListener('click', restartGame);
+
+    updateGift();
+    renderRound();
+  </script>
+</body>
+</html>
