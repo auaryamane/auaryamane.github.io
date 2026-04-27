@@ -1,128 +1,174 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Find the Odd Candy</title>
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    text-align: center;
-    background: #fff5f7;
-    margin: 0;
-    padding: 20px;
-  }
-  h1 {
-    margin-bottom: 5px;
-  }
-  #info {
-    margin-bottom: 15px;
-  }
-  #game {
-    display: grid;
-    justify-content: center;
-    gap: 10px;
-  }
-  .cell {
-    font-size: 32px;
-    cursor: pointer;
-    user-select: none;
-    transition: transform 0.1s;
-  }
-  .cell:hover {
-    transform: scale(1.2);
-  }
-  #startBtn {
-    padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;
-  }
-</style>
-</head>
-<body>
+  <meta charset="UTF-8">
+  <title>AI Site Builder</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<h1>🍬 Find the Odd One Out!</h1>
-<div id="info">
-  Score: <span id="score">0</span> |
-  Time: <span id="time">10</span>s
-</div>
-<button id="startBtn">Start Game</button>
-
-<div id="game"></div>
-
-<script>
-const game = document.getElementById("game");
-const scoreEl = document.getElementById("score");
-const timeEl = document.getElementById("time");
-const startBtn = document.getElementById("startBtn");
-
-let score = 0;
-let time = 10;
-let timer;
-let gridSize = 3;
-
-function startGame() {
-  score = 0;
-  time = 10;
-  gridSize = 3;
-  scoreEl.textContent = score;
-  timeEl.textContent = time;
-  startBtn.style.display = "none";
-
-  timer = setInterval(() => {
-    time--;
-    timeEl.textContent = time;
-    if (time <= 0) endGame();
-  }, 1000);
-
-  nextRound();
-}
-
-function nextRound() {
-  game.innerHTML = "";
-
-  // increase difficulty
-  if (score % 3 === 0 && gridSize < 8) {
-    gridSize++;
-  }
-
-  game.style.gridTemplateColumns = `repeat(${gridSize}, 60px)`;
-
-  const total = gridSize * gridSize;
-  const oddIndex = Math.floor(Math.random() * total);
-
-  for (let i = 0; i < total; i++) {
-    const cell = document.createElement("div");
-    cell.className = "cell";
-
-    if (i === oddIndex) {
-      cell.textContent = "🍪"; // odd one
-      cell.onclick = () => {
-        score++;
-        scoreEl.textContent = score;
-        time += 2;
-        nextRound();
-      };
-    } else {
-      cell.textContent = "🍬";
-      cell.onclick = () => {
-        time -= 2;
-        if (time < 0) time = 0;
-        timeEl.textContent = time;
-      };
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      display: flex;
+      justify-content: center;
     }
 
-    game.appendChild(cell);
+    .container {
+      width: 100%;
+      max-width: 800px;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    textarea {
+      width: 100%;
+      height: 120px;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+
+    .buttons {
+      margin-top: 10px;
+    }
+
+    button {
+      padding: 10px 14px;
+      margin-right: 8px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .primary { background: #22c55e; }
+    .secondary { background: #3b82f6; color: white; }
+    .deploy { background: #f59e0b; }
+
+    #status {
+      margin-top: 15px;
+    }
+
+    iframe {
+      width: 100%;
+      height: 450px;
+      margin-top: 20px;
+      background: white;
+      border-radius: 8px;
+      border: none;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+  <h1>🚀 AI Website Builder</h1>
+
+  <textarea id="prompt" placeholder="Describe your website..."></textarea>
+
+  <div class="buttons">
+    <button class="secondary" onclick="startVoice()">🎤 Voice</button>
+    <button class="primary" onclick="generate()">Generate</button>
+    <button class="deploy" onclick="deploy()">Deploy</button>
+  </div>
+
+  <div id="status">Ready</div>
+
+  <iframe id="preview"></iframe>
+</div>
+
+<script>
+  // 🔥 CHANGE THIS LATER
+  const BASE_URL = "https://YOUR_RAILWAY_URL";
+
+  let generatedHTML = "";
+
+  function startVoice() {
+    if (!('webkitSpeechRecognition' in window)) {
+      alert("Voice not supported in this browser.");
+      return;
+    }
+
+    const recognition = new webkitSpeechRecognition();
+    recognition.start();
+
+    recognition.onresult = function(event) {
+      document.getElementById("prompt").value =
+        event.results[0][0].transcript;
+    };
   }
-}
 
-function endGame() {
-  clearInterval(timer);
-  game.innerHTML = "";
-  startBtn.style.display = "inline-block";
-  alert("Game Over! Your score: " + score);
-}
+  async function generate() {
+    const prompt = document.getElementById("prompt").value;
+    const status = document.getElementById("status");
 
-startBtn.onclick = startGame;
+    if (!prompt) {
+      status.innerText = "Enter a prompt first.";
+      return;
+    }
+
+    try {
+      status.innerText = "Generating...";
+
+      const res = await fetch(BASE_URL + "/generate-site", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ prompt: prompt })
+      });
+
+      const data = await res.json();
+      generatedHTML = data.html;
+
+      document.getElementById("preview").srcdoc = generatedHTML;
+
+      status.innerText = "Preview ready";
+    } catch (err) {
+      console.error(err);
+      status.innerText = "Error generating site";
+    }
+  }
+
+  async function deploy() {
+    const status = document.getElementById("status");
+
+    if (!generatedHTML) {
+      status.innerText = "Generate first";
+      return;
+    }
+
+    try {
+      status.innerText = "Deploying...";
+
+      const res = await fetch(BASE_URL + "/commit-to-github", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ html: generatedHTML })
+      });
+
+      const data = await res.json();
+
+      if (data.status === "success") {
+        status.innerText = "Deployed successfully!";
+      } else {
+        status.innerText = "Deploy failed";
+      }
+
+    } catch (err) {
+      console.error(err);
+      status.innerText = "Error deploying";
+    }
+  }
 </script>
 
 </body>
