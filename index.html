@@ -63,6 +63,14 @@
       border-radius: 8px;
       border: none;
     }
+
+    .debug {
+      margin-top: 15px;
+      background: #111827;
+      color: #f87171;
+      font-size: 12px;
+      height: 150px;
+    }
   </style>
 </head>
 
@@ -82,13 +90,31 @@
   <div id="status">Ready</div>
 
   <iframe id="preview"></iframe>
+
+  <!-- Debug area will be injected here -->
+  <div id="debug-container"></div>
+
 </div>
 
 <script>
-  // 🔥 CHANGE THIS LATER
   const BASE_URL = "https://voicepage-production.up.railway.app";
 
   let generatedHTML = "";
+
+  function showDebug(data) {
+    let debugBox = document.getElementById("debug-box");
+
+    if (!debugBox) {
+      debugBox = document.createElement("textarea");
+      debugBox.id = "debug-box";
+      debugBox.className = "debug";
+      document.getElementById("debug-container").appendChild(debugBox);
+    }
+
+    debugBox.value = typeof data === "string"
+      ? data
+      : JSON.stringify(data, null, 2);
+  }
 
   function startVoice() {
     if (!('webkitSpeechRecognition' in window)) {
@@ -125,14 +151,31 @@
         body: JSON.stringify({ prompt: prompt })
       });
 
-      const data = await res.json();
+      let data;
+
+      try {
+        data = await res.json();
+      } catch (e) {
+        const text = await res.text();
+        showDebug(text);
+        throw new Error("Non-JSON response");
+      }
+
+      if (!res.ok) {
+        showDebug(data);
+        status.innerText = "Error from server";
+        return;
+      }
+
       generatedHTML = data.html;
 
       document.getElementById("preview").srcdoc = generatedHTML;
 
       status.innerText = "Preview ready";
+
     } catch (err) {
       console.error(err);
+      showDebug(err.toString());
       status.innerText = "Error generating site";
     }
   }
@@ -156,16 +199,27 @@
         body: JSON.stringify({ html: generatedHTML })
       });
 
-      const data = await res.json();
+      let data;
 
-      if (data.status === "success") {
-        status.innerText = "Deployed successfully!";
-      } else {
-        status.innerText = "Deploy failed";
+      try {
+        data = await res.json();
+      } catch (e) {
+        const text = await res.text();
+        showDebug(text);
+        throw new Error("Non-JSON response");
       }
+
+      if (!res.ok || data.status !== "success") {
+        showDebug(data);
+        status.innerText = "Deploy failed";
+        return;
+      }
+
+      status.innerText = "Deployed successfully!";
 
     } catch (err) {
       console.error(err);
+      showDebug(err.toString());
       status.innerText = "Error deploying";
     }
   }
